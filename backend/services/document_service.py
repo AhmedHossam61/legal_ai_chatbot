@@ -108,13 +108,13 @@ def delete_document(doc_id: str) -> None:
     # Remove embeddings from ChromaDB
     try:
         from langchain_chroma import Chroma
-        from langchain_openai import OpenAIEmbeddings
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
         from backend.core.config import get_settings
 
         settings = get_settings()
-        embeddings = OpenAIEmbeddings(
+        embeddings = GoogleGenerativeAIEmbeddings(
             model=settings.EMBED_MODEL,
-            openai_api_key=settings.OPENAI_API_KEY,
+            google_api_key=settings.GEMINI_API_KEY,
         )
         vs = Chroma(
             persist_directory=settings.VECTOR_STORE_DIR,

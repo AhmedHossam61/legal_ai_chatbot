@@ -1,30 +1,31 @@
 """
-LLM Client – wraps OpenAI ChatCompletion calls.
-Swap the underlying model by changing LLM_MODEL in .env.
+LLM Client – wraps Google Gemini chat calls via langchain-google-genai.
+Swap the model by changing LLM_MODEL in .env (e.g., gemini-2.0-flash, gemini-1.5-pro).
 """
 
 import logging
-from openai import AsyncOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from backend.core.config import get_settings
 from backend.models.schemas import ChatMessage
 
 logger = logging.getLogger(__name__)
 
-
-def _build_client() -> AsyncOpenAI:
-    settings = get_settings()
-    return AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+# Module-level LLM instance (re-used across requests)
+_llm: ChatGoogleGenerativeAI | None = None
 
 
-# Module-level client instance (re-used across requests)
-_client: AsyncOpenAI | None = None
-
-
-def get_llm_client() -> AsyncOpenAI:
-    global _client
-    if _client is None:
-        _client = _build_client()
-    return _client
+def get_llm() -> ChatGoogleGenerativeAI:
+    global _llm
+    if _llm is None:
+        settings = get_settings()
+        _llm = ChatGoogleGenerativeAI(
+            model=settings.LLM_MODEL,
+            google_api_key=settings.GEMINI_API_KEY,
+            temperature=settings.LLM_TEMPERATURE,
+            max_output_tokens=settings.LLM_MAX_TOKENS,
+        )
+    return _llm
 
 
 async def chat_completion(
@@ -33,7 +34,7 @@ async def chat_completion(
     history: list[ChatMessage] | None = None,
 ) -> tuple[str, int]:
     """
-    Call the LLM and return (answer_text, tokens_used).
+    Call Gemini and return (answer_text, tokens_used).
 
     Parameters
     ----------
@@ -42,33 +43,35 @@ async def chat_completion(
     history      : list – Previous chat turns (role/content pairs).
     """
     settings = get_settings()
-    client = get_llm_client()
+    llm = get_llm()
 
     # ── Build message list ──────────────────────────────────────────────────
-    messages: list[dict] = [{"role": "system", "content": settings.SYSTEM_PROMPT}]
+    messages = [SystemMessage(content=settings.SYSTEM_PROMPT)]
 
     if history:
         for msg in history[-6:]:          # keep last 6 turns to limit tokens
-            messages.append({"role": msg.role, "content": msg.content})
+            if msg.role == "user":
+                messages.append(HumanMessage(content=msg.content))
+            elif msg.role == "assistant":
+                messages.append(AIMessage(content=msg.content))
 
     # Inject RAG context before the user message if available
     if context:
-        messages.append({
-            "role": "system",
-            "content": f"السياق القانوني المسترجع:\n\n{context}\n\nاستخدم هذا السياق للإجابة.",
-        })
+        messages.append(SystemMessage(
+            content=f"السياق القانوني المسترجع:\n\n{context}\n\nاستخدم هذا السياق للإجابة."
+        ))
 
-    messages.append({"role": "user", "content": user_message})
+    messages.append(HumanMessage(content=user_message))
 
     # ── API call ────────────────────────────────────────────────────────────
-    logger.debug("Calling LLM model=%s", settings.LLM_MODEL)
-    response = await client.chat.completions.create(
-        model=settings.LLM_MODEL,
-        messages=messages,
-        temperature=settings.LLM_TEMPERATURE,
-        max_tokens=settings.LLM_MAX_TOKENS,
-    )
+    logger.debug("Calling Gemini model=%s", settings.LLM_MODEL)
+    response = await llm.ainvoke(messages)
 
-    answer = response.choices[0].message.content or ""
-    tokens = response.usage.total_tokens if response.usage else 0
+    answer = response.content if isinstance(response.content, str) else str(response.content)
+
+    # Extract token usage if available
+    tokens = 0
+    if hasattr(response, "usage_metadata") and response.usage_metadata:
+        tokens = getattr(response.usage_metadata, "total_tokens", 0) or 0
+
     return answer, tokens

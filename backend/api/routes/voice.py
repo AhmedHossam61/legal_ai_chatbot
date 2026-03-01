@@ -21,8 +21,8 @@ router = APIRouter(prefix="/api/voice", tags=["Voice"])
 @router.post("/transcribe", response_model=TranscriptionResponse)
 async def transcribe(audio: UploadFile = File(...)) -> TranscriptionResponse:
     """
-    Convert an uploaded audio file (WAV, MP3, WebM, M4A, …) to text.
-    Supports Arabic and English via OpenAI Whisper.
+    Convert an uploaded audio file (WAV, MP3, WebM, M4A, OGG, FLAC…) to text.
+    Supports Arabic and English via Gemini multimodal transcription.
     """
     audio_bytes = await audio.read()
     if not audio_bytes:
@@ -31,7 +31,7 @@ async def transcribe(audio: UploadFile = File(...)) -> TranscriptionResponse:
     try:
         result = await transcribe_audio(
             audio_bytes=audio_bytes,
-            filename=audio.filename or "audio.webm",
+            filename=audio.filename or "audio.wav",
         )
         return TranscriptionResponse(**result)
     except Exception as exc:
@@ -42,8 +42,8 @@ async def transcribe(audio: UploadFile = File(...)) -> TranscriptionResponse:
 @router.post("/synthesize")
 async def synthesize(request: TTSRequest) -> Response:
     """
-    Convert text to speech and return an MP3 audio file.
-    Supports Arabic text with the configured voice.
+    Convert text to speech and return a WAV audio file.
+    Supports Arabic text with the configured Gemini TTS voice.
     """
     try:
         audio_bytes = await synthesize_speech(
@@ -52,8 +52,8 @@ async def synthesize(request: TTSRequest) -> Response:
         )
         return Response(
             content=audio_bytes,
-            media_type="audio/mpeg",
-            headers={"Content-Disposition": 'attachment; filename="response.mp3"'},
+            media_type="audio/wav",
+            headers={"Content-Disposition": 'attachment; filename="response.wav"'},
         )
     except Exception as exc:
         logger.exception("TTS synthesis failed")

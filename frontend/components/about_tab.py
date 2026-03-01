@@ -27,12 +27,12 @@ def render_about_tab() -> None:
         **التقنيات المستخدمة:**
         | المكوّن | التقنية |
         |---------|---------|
-        | LLM | OpenAI GPT-4o-mini |
-        | Embeddings | text-embedding-3-small |
+        | LLM | Google Gemini 2.0 Flash (free) |
+        | Embeddings | Google text-embedding-004 (free) |
         | Vector DB | ChromaDB |
         | RAG Framework | LangChain |
-        | ASR | OpenAI Whisper |
-        | TTS | OpenAI TTS |
+        | ASR | Gemini 2.0 Flash (multimodal) |
+        | TTS | Gemini 2.5 Flash Preview TTS |
         | Backend | FastAPI |
         | Frontend | Streamlit |
         """)
@@ -50,7 +50,7 @@ def render_about_tab() -> None:
             for key, value in components.items():
                 icon = "✅" if value not in ("MISSING", "not_found") else "❌"
                 label = {
-                    "openai_key": "مفتاح OpenAI",
+                    "gemini_key": "مفتاح Gemini",
                     "vector_store": "قاعدة المتجهات",
                     "uploads_dir": "مجلد الرفع",
                     "llm_model": "نموذج اللغة",

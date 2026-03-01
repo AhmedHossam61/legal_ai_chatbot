@@ -75,6 +75,6 @@ def render_voice_tab() -> None:
             with st.spinner("جاري تحويل الإجابة إلى صوت…"):
                 try:
                     audio_response = synthesize_speech(answer)
-                    st.audio(audio_response, format="audio/mp3")
+                    st.audio(audio_response, format="audio/wav")
                 except Exception as exc:
                     st.warning(f"تعذّر إنشاء الصوت: {exc}")

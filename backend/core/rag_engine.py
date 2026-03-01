@@ -12,7 +12,7 @@ from pathlib import Path
 
 from langchain_community.document_loaders import PyMuPDFLoader, Docx2txtLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 
 from backend.core.config import get_settings
@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 
 def _get_vectorstore() -> Chroma:
     settings = get_settings()
-    embeddings = OpenAIEmbeddings(
-        model=settings.EMBED_MODEL,
-        openai_api_key=settings.OPENAI_API_KEY,
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model=settings.EMBED_MODEL,          # models/text-embedding-004
+        google_api_key=settings.GEMINI_API_KEY,
     )
     return Chroma(
         persist_directory=settings.VECTOR_STORE_DIR,
@@ -80,7 +80,9 @@ def ingest_file(file_path: Path) -> int:
         chunk.metadata["doc_id"] = doc_id
 
     vs = _get_vectorstore()
-    vs.add_documents(chunks)
+    # Chroma requires unique IDs per chunk to avoid duplicates on re-ingest
+    ids = [f"{doc_id}_{i}" for i in range(len(chunks))]
+    vs.add_documents(chunks, ids=ids)
     logger.info("Created %d chunks for %s", len(chunks), file_path.name)
     return len(chunks)
 

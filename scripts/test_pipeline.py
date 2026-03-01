@@ -37,9 +37,9 @@ def check(label: str, ok: bool, detail: str = "") -> None:
 def test_config() -> bool:
     try:
         s = get_settings()
-        ok = bool(s.OPENAI_API_KEY)
-        check("Config loaded + OPENAI_API_KEY present", ok,
-              detail="" if ok else "Set OPENAI_API_KEY in .env")
+        ok = bool(s.GEMINI_API_KEY)
+        check("Config loaded + GEMINI_API_KEY present", ok,
+              detail="" if ok else "Set GEMINI_API_KEY in .env")
         return ok
     except Exception as exc:
         check("Config", False, str(exc))
@@ -55,10 +55,10 @@ async def test_llm() -> bool:
             history=[],
         )
         ok = len(answer) > 0
-        check("LLM chat_completion", ok, f"tokens={tokens}, response_len={len(answer)}")
+        check("Gemini LLM chat_completion", ok, f"tokens={tokens}, response_len={len(answer)}")
         return ok
     except Exception as exc:
-        check("LLM chat_completion", False, str(exc))
+        check("Gemini LLM chat_completion", False, str(exc))
         return False
 
 
@@ -93,10 +93,10 @@ async def test_tts() -> bool:
         from backend.core.tts_engine import synthesize_speech
         audio_bytes = await synthesize_speech("مرحباً، هذا اختبار.")
         ok = len(audio_bytes) > 0
-        check("TTS synthesize_speech", ok, f"bytes={len(audio_bytes)}")
+        check("Gemini TTS synthesize_speech (WAV)", ok, f"bytes={len(audio_bytes)}")
         return ok
     except Exception as exc:
-        check("TTS synthesize_speech", False, str(exc))
+        check("Gemini TTS synthesize_speech", False, str(exc))
         return False
 
 

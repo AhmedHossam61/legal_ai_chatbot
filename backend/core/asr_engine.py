@@ -2,7 +2,7 @@
 ASR Engine – Speech-to-Text.
 
 Supports two providers (set ASR_PROVIDER in .env):
-  • "openai"         – OpenAI Whisper API  (requires API key, no local GPU needed)
+  • "gemini"         – Gemini multimodal model for transcription (free tier)
   • "local_whisper"  – openai-whisper library running locally (offline, slower)
 """
 
@@ -14,67 +14,94 @@ from backend.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
+# Map common file extensions to valid MIME types for the Gemini API
+_MIME_MAP = {
+    ".wav":  "audio/wav",
+    ".mp3":  "audio/mp3",
+    ".m4a":  "audio/aac",
+    ".aac":  "audio/aac",
+    ".ogg":  "audio/ogg",
+    ".flac": "audio/flac",
+    ".webm": "audio/webm",
+    ".aiff": "audio/aiff",
+}
 
-async def transcribe_audio(audio_bytes: bytes, filename: str = "audio.webm") -> dict:
+
+async def transcribe_audio(audio_bytes: bytes, filename: str = "audio.wav") -> dict:
     """
     Transcribe audio bytes and return:
       {"text": str, "language": str | None, "duration_seconds": float | None}
 
     Parameters
     ----------
-    audio_bytes : bytes  – Raw audio data (webm, wav, mp3, m4a, …)
-    filename    : str    – Original filename (used to infer mime type)
+    audio_bytes : bytes  – Raw audio data (wav, mp3, m4a, ogg, flac, webm…)
+    filename    : str    – Original filename (used to infer MIME type)
     """
     settings = get_settings()
     provider = settings.ASR_PROVIDER.lower()
 
-    if provider == "openai":
-        return await _transcribe_openai(audio_bytes, filename, settings)
+    if provider == "gemini":
+        return await _transcribe_gemini(audio_bytes, filename, settings)
     elif provider == "local_whisper":
         return _transcribe_local(audio_bytes, settings)
     else:
-        raise ValueError(f"Unknown ASR_PROVIDER: {provider!r}. Use 'openai' or 'local_whisper'.")
+        raise ValueError(f"Unknown ASR_PROVIDER: {provider!r}. Use 'gemini' or 'local_whisper'.")
 
 
-# ── OpenAI Whisper API ──────────────────────────────────────────────────────────
+# ── Gemini ASR (multimodal transcription) ───────────────────────────────────────
 
-async def _transcribe_openai(audio_bytes: bytes, filename: str, settings) -> dict:
-    from openai import AsyncOpenAI
+async def _transcribe_gemini(audio_bytes: bytes, filename: str, settings) -> dict:
+    """
+    Use a Gemini multimodal model to transcribe audio.
+    Audio is passed inline (max 20 MB) which avoids the Files API for demo-sized clips.
+    """
+    import asyncio
+    from google import genai
+    from google.genai import types
 
-    client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+    suffix = Path(filename).suffix.lower()
+    mime_type = _MIME_MAP.get(suffix, "audio/wav")
 
-    # The API requires a file-like object with a name attribute
-    import io
-    audio_file = io.BytesIO(audio_bytes)
-    audio_file.name = filename
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
-    logger.debug("Calling OpenAI Whisper API, model=%s", settings.ASR_MODEL)
-    response = await client.audio.transcriptions.create(
-        model=settings.ASR_MODEL,
-        file=audio_file,
-        response_format="verbose_json",
+    prompt = (
+        "Please transcribe this audio verbatim. "
+        "If the speech is in Arabic, transcribe in Arabic. "
+        "Return ONLY the transcription text, nothing else."
     )
 
-    return {
-        "text": response.text,
-        "language": getattr(response, "language", None),
-        "duration_seconds": getattr(response, "duration", None),
-    }
+    logger.debug("Calling Gemini ASR, model=%s, mime=%s, size=%d bytes",
+                 settings.ASR_MODEL, mime_type, len(audio_bytes))
+
+    # Run the synchronous Gemini SDK call in a thread executor
+    loop = asyncio.get_running_loop()
+    response = await loop.run_in_executor(
+        None,
+        lambda: client.models.generate_content(
+            model=settings.ASR_MODEL,
+            contents=[
+                prompt,
+                types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
+            ],
+        )
+    )
+
+    text = response.text.strip() if response.text else ""
+    return {"text": text, "language": None, "duration_seconds": None}
 
 
 # ── Local Whisper ───────────────────────────────────────────────────────────────
 
 def _transcribe_local(audio_bytes: bytes, settings) -> dict:
-    """Run whisper locally. Requires: pip install openai-whisper"""
+    """Run Whisper locally. Requires: pip install openai-whisper"""
     try:
         import whisper
     except ImportError:
         raise RuntimeError(
             "openai-whisper is not installed. "
-            "Run: pip install openai-whisper  OR switch ASR_PROVIDER=openai"
+            "Run: pip install openai-whisper  OR switch ASR_PROVIDER=gemini"
         )
 
-    # Write bytes to a temp file because whisper needs a file path
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
         tmp.write(audio_bytes)
         tmp_path = tmp.name

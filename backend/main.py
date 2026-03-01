@@ -71,12 +71,10 @@ app.include_router(voice.router)
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 async def health_check() -> HealthResponse:
     """Quick liveness probe – returns the status of all core components."""
-    import openai
-
     components: dict[str, str] = {}
 
-    # Check OpenAI key is set (not valid, just present)
-    components["openai_key"] = "configured" if settings.OPENAI_API_KEY else "MISSING"
+    # Check Gemini key is set (not valid, just present)
+    components["gemini_key"] = "configured" if settings.GEMINI_API_KEY else "MISSING"
     components["vector_store"] = "ready" if Path(settings.VECTOR_STORE_DIR).exists() else "not_found"
     components["uploads_dir"] = "ready" if Path(settings.UPLOAD_DIR).exists() else "not_found"
     components["llm_model"] = settings.LLM_MODEL
