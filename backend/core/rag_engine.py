@@ -12,8 +12,8 @@ from pathlib import Path
 
 from langchain_community.document_loaders import PyMuPDFLoader, Docx2txtLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
+from backend.core.embeddings import GeminiEmbeddings
 
 from backend.core.config import get_settings
 from backend.models.schemas import SourceChunk
@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 
 def _get_vectorstore() -> Chroma:
     settings = get_settings()
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model=settings.EMBED_MODEL,          # models/text-embedding-004
-        google_api_key=settings.GEMINI_API_KEY,
+    embeddings = GeminiEmbeddings(
+        model=settings.EMBED_MODEL,
+        api_key=settings.GEMINI_API_KEY,
     )
     return Chroma(
         persist_directory=settings.VECTOR_STORE_DIR,

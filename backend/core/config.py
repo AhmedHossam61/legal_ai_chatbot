@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # ── RAG / Vector Store ─────────────────────────────────────────────────────
     VECTOR_STORE_DIR: str = str(BASE_DIR / "vector_store")
-    EMBED_MODEL: str = "models/text-embedding-004"   # Google embedding model
+    EMBED_MODEL: str = "models/embedding-001"   # v1beta-compatible embedding model
     RAG_TOP_K: int = 4                       # chunks returned per query
     CHUNK_SIZE: int = 800
     CHUNK_OVERLAP: int = 100
