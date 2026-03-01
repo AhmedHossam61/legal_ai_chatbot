@@ -1,7 +1,7 @@
 """About Tab – system health and technical overview."""
 
 import streamlit as st
-from frontend.components.api_client import health_check
+from components.api_client import health_check
 
 
 def render_about_tab() -> None:

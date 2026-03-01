@@ -4,7 +4,7 @@ Uses the browser's audio recorder widget via streamlit-audio-recorder.
 """
 
 import streamlit as st
-from frontend.components.api_client import transcribe_audio, chat, synthesize_speech
+from components.api_client import transcribe_audio, chat, synthesize_speech
 
 
 def render_voice_tab() -> None:

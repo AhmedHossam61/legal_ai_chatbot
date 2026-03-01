@@ -65,9 +65,14 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentUploadRespons
             chunks_created=chunks,
             message=f"Document ingested successfully ({chunks} chunks).",
         )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         logger.exception("Document ingestion failed: %s", file.filename)
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=500,
+            detail="Document upload failed due to an unexpected server error.",
+        ) from exc
 
 
 @router.get("", response_model=list[DocumentListItem])

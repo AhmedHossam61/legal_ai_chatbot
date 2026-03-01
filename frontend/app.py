@@ -21,11 +21,11 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-from frontend.components.sidebar import render_sidebar
-from frontend.components.chat_tab import render_chat_tab
-from frontend.components.documents_tab import render_documents_tab
-from frontend.components.voice_tab import render_voice_tab
-from frontend.components.about_tab import render_about_tab
+from components.sidebar import render_sidebar
+from components.chat_tab import render_chat_tab
+from components.documents_tab import render_documents_tab
+from components.voice_tab import render_voice_tab
+from components.about_tab import render_about_tab
 
 # ── Sidebar ─────────────────────────────────────────────────────────────────────
 render_sidebar()

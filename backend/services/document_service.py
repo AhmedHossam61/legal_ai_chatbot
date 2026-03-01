@@ -8,6 +8,7 @@ documents so we can list and delete them without a full database.
 import json
 import logging
 import asyncio
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -33,6 +34,15 @@ def _save_registry(data: dict) -> None:
     REGISTRY_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _safe_filename(filename: str) -> str:
+    """Normalize user-supplied file names for cross-platform filesystem safety."""
+    base_name = Path(filename).name.strip()
+    if not base_name:
+        return "uploaded_document"
+    sanitized = re.sub(r'[<>:"/\\|?*\x00-\x1F]', "_", base_name)
+    return sanitized.rstrip(". ") or "uploaded_document"
+
+
 # ── Public API ──────────────────────────────────────────────────────────────────
 
 async def save_and_ingest(file_bytes: bytes, filename: str, doc_id: str) -> int:
@@ -47,19 +57,24 @@ async def save_and_ingest(file_bytes: bytes, filename: str, doc_id: str) -> int:
     settings = get_settings()
     dest_dir = Path(settings.UPLOAD_DIR) / doc_id
     dest_dir.mkdir(parents=True, exist_ok=True)
-    dest_path = dest_dir / filename
+    clean_filename = _safe_filename(filename)
+    dest_path = dest_dir / clean_filename
     dest_path.write_bytes(file_bytes)
     logger.info("Saved upload: %s", dest_path)
 
     # Run CPU-bound ingestion in a thread executor
     loop = asyncio.get_running_loop()
-    chunks = await loop.run_in_executor(None, ingest_file, dest_path)
+    try:
+        chunks = await loop.run_in_executor(None, ingest_file, dest_path)
+    except Exception as exc:
+        logger.warning("Ingestion failed for %s: %s", clean_filename, exc)
+        raise ValueError(f"Unable to process file '{clean_filename}': {exc}") from exc
 
     # Update registry
     registry = _load_registry()
     registry[doc_id] = {
         "doc_id": doc_id,
-        "filename": filename,
+        "filename": clean_filename,
         "status": DocumentStatus.READY.value,
         "uploaded_at": datetime.now(timezone.utc).isoformat(),
         "chunks": chunks,

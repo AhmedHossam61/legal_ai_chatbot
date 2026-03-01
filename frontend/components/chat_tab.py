@@ -4,7 +4,7 @@ Supports multi-turn conversation and optional RAG source display.
 """
 
 import streamlit as st
-from frontend.components.api_client import chat
+from components.api_client import chat
 
 
 def render_chat_tab() -> None:

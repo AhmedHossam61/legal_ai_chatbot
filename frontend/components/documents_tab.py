@@ -3,7 +3,7 @@ Documents Tab – upload legal documents and manage the knowledge base.
 """
 
 import streamlit as st
-from frontend.components.api_client import upload_document, list_documents, delete_document
+from components.api_client import upload_document, list_documents, delete_document
 
 
 def render_documents_tab() -> None:
