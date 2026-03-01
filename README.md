@@ -108,209 +108,162 @@ You should see `(.venv)` at the start of your prompt after activation.
 ---
 
 ### Step 3 â€“ Install dependencies
+## Legal AI Demo – Arabic Legal Assistant
 
-```bash
-pip install -r requirements.txt
-```
-
-Key packages installed:
-
-| Package | Purpose |
-|---------|---------|
-| `google-genai` | Gemini TTS + ASR (inline audio) |
-| `langchain-google-genai` | Gemini LLM + Embeddings via LangChain |
-| `langchain-chroma` | Vector store integration |
-| `fastapi` + `uvicorn` | REST API backend |
-| `streamlit` | Web frontend |
-| `pymupdf` + `docx2txt` | PDF / DOCX document parsing |
+This repository hosts a proof-of-concept legal assistant focused on Saudi laws. It combines a FastAPI backend, a Streamlit frontend, and Google Gemini models for chat, retrieval-augmented generation (RAG), speech-to-text, and text-to-speech.
 
 ---
 
-### Step 4 â€“ Configure environment variables
+## Highlights
 
-Copy the example file and open it in any text editor:
-
-```bash
-# Windows
-copy .env.example .env
-
-# macOS / Linux
-cp .env.example .env
-```
-
-Edit `.env` and set your Gemini API key:
-
-```env
-GEMINI_API_KEY=AIza...your-key-here...
-```
-
-All other values have sensible defaults and do **not** need to be changed for the demo.
-
-<details>
-<summary>Full .env reference</summary>
-
-```env
-GEMINI_API_KEY=AIza...           # Required â€“ get free at aistudio.google.com/apikey
-
-LLM_MODEL=gemini-2.0-flash       # Chat model (free tier)
-LLM_TEMPERATURE=0.2
-LLM_MAX_TOKENS=2048
-
-EMBED_MODEL=models/text-embedding-004  # Embedding model (free tier)
-RAG_TOP_K=4
-CHUNK_SIZE=800
-CHUNK_OVERLAP=100
-
-ASR_PROVIDER=gemini              # gemini (free) | local_whisper (offline)
-ASR_MODEL=gemini-2.0-flash
-
-TTS_PROVIDER=gemini              # gemini (free) | gtts (lighter)
-TTS_MODEL=gemini-2.5-flash-preview-tts
-TTS_VOICE=Aoede                  # Aoede | Kore | Puck | Fenrir | Charon | â€¦
-
-DEBUG=true
-```
-
-</details>
+- Chat experience in Arabic or English powered by Gemini 2.0 Flash
+- Upload Saudi regulations or contracts (PDF/DOCX/TXT) and query them via RAG
+- Voice mode: record audio, transcribe it, and listen to the AI’s spoken reply
+- Complete end-to-end pipeline (ingestion script, smoke tests, automated health panel)
 
 ---
 
-### Step 5 â€“ (Optional) Ingest Saudi legal documents
+## Project Structure
 
-Drop any PDF, DOCX, or TXT legal files into `backend/data/saudi_legal_samples/`, then run:
-
-```bash
-python scripts/ingest_legal_docs.py
 ```
-
-This embeds the documents into ChromaDB so the AI can answer questions based on them.  
-You can skip this step and still use the chat â€“ the AI will answer from its base knowledge.
-
----
-
-### Step 6 â€“ Run the smoke test
-
-Verify that all components work before the demo:
-
-```bash
-python scripts/test_pipeline.py
-```
-
-Expected output:
-```
-INFO     âœ… PASS  Config loaded + GEMINI_API_KEY present
-INFO     âœ… PASS  Gemini LLM chat_completion  â†’  tokens=â€¦
-INFO     âœ… PASS  RAG ingest  â†’  chunks=2
-INFO     âœ… PASS  RAG retrieve  â†’  results=1
-INFO     âœ… PASS  Gemini TTS synthesize_speech (WAV)  â†’  bytes=â€¦
-INFO     Result: 4/4 tests passed.
+legal_ai_chatbot/
+├── backend/                FastAPI code (API routes, services, core modules)
+├── frontend/               Streamlit UI (chat, documents, voice, about tabs)
+├── scripts/                Utility scripts (ingest + smoke test)
+├── tests/                  Pytest-based unit tests
+├── requirements.txt        Python dependencies
+├── .env.example            Sample environment variables
+└── README.md
 ```
 
 ---
 
-### Step 7 â€“ Start the backend
+## Prerequisites
 
-Open a terminal and run:
+| Dependency | Minimum Version | Command to verify |
+|------------|-----------------|-------------------|
+| Python     | 3.11            | `python --version` |
+| pip        | 23              | `pip --version`    |
+| Git        | any             | `git --version`    |
 
-```bash
-uvicorn backend.main:app --reload --port 8000
-```
-
-- `--reload` watches for code changes (great for development)
-- The API is now live at **http://localhost:8000**
-- Interactive API docs (Swagger UI): **http://localhost:8000/docs**
+You also need a free **Gemini API key** from <https://aistudio.google.com/apikey>.
 
 ---
 
-### Step 8 â€“ Start the frontend
+## Quick Start
 
-Open a **second terminal** (with the virtual environment activated), then run:
+1. **Clone the repo**
+    ```bash
+    git clone https://github.com/AhmedHossam61/legal_ai_chatbot.git
+    cd legal_ai_chatbot
+    ```
 
-```bash
-streamlit run frontend/app.py
-```
+2. **Create & activate a virtual environment**
+    - PowerShell: `python -m venv .venv && .\.venv\Scripts\Activate.ps1`
+    - macOS/Linux: `python3 -m venv .venv && source .venv/bin/activate`
 
-The browser will open automatically at **http://localhost:8501**.  
-If it doesn't, open it manually.
+3. **Install dependencies**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4. **Configure environment variables**
+    ```bash
+    copy .env.example .env        # or: cp .env.example .env
+    ```
+    Edit `.env` and set:
+    ```env
+    GEMINI_API_KEY=AIza...your-key...
+    ```
+    Optional overrides (defaults shown):
+    ```env
+    LLM_MODEL=gemini-2.0-flash
+    EMBED_MODEL=models/text-embedding-004
+    ASR_PROVIDER=gemini         # or local_whisper
+    TTS_PROVIDER=gemini         # or gtts
+    TTS_MODEL=gemini-2.5-flash-preview-tts
+    TTS_VOICE=Aoede             # see docs for the full voice list
+    ```
+
+5. **(Optional) Ingest sample regulations**
+    Place documents in `backend/data/saudi_legal_samples/` and run:
+    ```bash
+    python scripts/ingest_legal_docs.py
+    ```
+
+6. **Run the smoke test**
+    ```bash
+    python scripts/test_pipeline.py
+    ```
+    This checks config, LLM, RAG, and TTS before the demo.
+
+7. **Start the backend (terminal #1)**
+    ```bash
+    uvicorn backend.main:app --reload --port 8000
+    ```
+    - API base URL: <http://localhost:8000>
+    - Swagger docs: <http://localhost:8000/docs>
+
+8. **Start the frontend (terminal #2)**
+    ```bash
+    streamlit run frontend/app.py
+    ```
+    Visit <http://localhost:8501> in your browser.
+
+9. **Interact with the demo**
+    | Tab | Purpose |
+    |-----|---------|
+    | Chat | Ask legal questions, view cited RAG snippets |
+    | Documents | Upload/manage PDFs, DOCX, TXT files |
+    | Voice | Record/upload audio → transcribe → answer → speak |
+    | About | Health status (Gemini key, vector store, etc.) |
+
+10. **Run the automated tests**
+     ```bash
+     pytest tests/ -v
+     ```
 
 ---
 
-### Step 9 â€“ Use the app
+## Key Configuration Options
 
-| Tab | What to do |
-|-----|-----------|
-| **ðŸ’¬ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø©** | Type a legal question in Arabic or English and press Enter |
-| **ðŸ“„ Ø±ÙØ¹ Ø§Ù„Ù…Ø³ØªÙ†Ø¯Ø§Øª** | Upload a PDF/DOCX/TXT contract or regulation |
-| **ðŸŽ™ï¸ Ø§Ù„ØªÙØ§Ø¹Ù„ Ø§Ù„ØµÙˆØªÙŠ** | Record or upload audio â†’ get a spoken AI answer |
-| **â„¹ï¸ Ø­ÙˆÙ„ Ø§Ù„Ù†Ø¸Ø§Ù…** | Click "ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø­Ø§Ù„Ø©" to confirm all components are green |
-
----
-
-### Running the tests
-
-```bash
-pytest tests/ -v
-```
-
----
-
-## ðŸ”§ Configuration Reference
-
-All settings live in [backend/core/config.py](backend/core/config.py) and are loaded from `.env`.
-
-| Variable | Default | Description |
-|---|---|---|
-| `GEMINI_API_KEY` | â€“ | **Required** â€“ free at aistudio.google.com |
-| `LLM_MODEL` | `gemini-2.0-flash` | Chat LLM (free tier) |
-| `EMBED_MODEL` | `models/text-embedding-004` | Embedding model (free tier) |
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `GEMINI_API_KEY` | (required) | Free key from Google AI Studio |
+| `LLM_MODEL` | `gemini-2.0-flash` | Chat model used by the assistant |
+| `EMBED_MODEL` | `models/text-embedding-004` | Embeddings for ChromaDB |
 | `ASR_PROVIDER` | `gemini` | `gemini` or `local_whisper` |
 | `TTS_PROVIDER` | `gemini` | `gemini` or `gtts` |
-| `TTS_MODEL` | `gemini-2.5-flash-preview-tts` | Gemini TTS model |
+| `TTS_MODEL` | `gemini-2.5-flash-preview-tts` | Text-to-speech model |
+| `TTS_VOICE` | `Aoede` | Any Gemini TTS voice (Kore, Puck, Fenrir, etc.) |
+| `RAG_TOP_K` | `4` | Number of chunks returned per query |
+
+---
+
+## Tech Stack
+
+| Layer | Tools |
+|-------|-------|
+| Backend | FastAPI, Uvicorn, Pydantic |
+| Frontend | Streamlit + httpx |
+| LLM / Embeddings | Gemini (via `langchain-google-genai`) |
+| Vector Store | ChromaDB |
+| Speech | Gemini ASR + Gemini TTS (fallback to gTTS/local Whisper) |
+| Testing | Pytest, pytest-asyncio |
+
+---
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| `GEMINI_API_KEY not set` | Ensure `.env` exists and contains the key |
+| `ModuleNotFoundError` | Activate `.venv` and reinstall requirements |
+| Backend unavailable on port 8000 | Confirm `uvicorn` is running and not blocked |
+| Voice tab returns empty text | Record a louder clip or upload WAV/MP3 directly |
+| ChromaDB schema errors | Re-run `pip install -r requirements.txt` to sync versions |
+
+---
+
+Maintainer: Eng. Ahmed Hossam Abdelrahman (Feb 2026)
 | `TTS_VOICE` | `Aoede` | One of 30 available voices |
-| `RAG_TOP_K` | `4` | Chunks retrieved per query |
-
-**Available TTS voices:** Aoede, Kore, Puck, Fenrir, Charon, Leda, Orus, Zephyr, Autonoe, Sulafat, and 20 more. See the [Gemini TTS docs](https://ai.google.dev/gemini-api/docs/speech-generation#voice-options).
-
----
-
-## ðŸ—ï¸ Architecture
-
-```
-User (Browser)
-    â”‚
-    â–¼
-Streamlit Frontend (port 8501)
-    â”‚  httpx calls
-    â–¼
-FastAPI Backend (port 8000)
-    â”œâ”€â”€ /api/chat        â†’ chat_service â†’ Gemini LLM + ChromaDB RAG
-    â”œâ”€â”€ /api/documents   â†’ document_service â†’ ChromaDB
-    â””â”€â”€ /api/voice       â†’ asr_engine (Gemini) + tts_engine (Gemini TTS)
-```
-
----
-
-## ðŸ“‹ Demo Scope (as per proposal)
-
-- [x] Web application with professional UI
-- [x] LLM integration for legal text analysis (Gemini 2.0 Flash)
-- [x] Document upload + analysis (PDF, DOCX, TXT) via RAG
-- [x] ASR â€“ voice to text (Gemini multimodal)
-- [x] TTS â€“ text to audio (Gemini 2.5 Flash Preview TTS)
-- [x] RAG over a sample of Saudi legal regulations (ChromaDB)
-
----
-
-## ðŸ› ï¸ Troubleshooting
-
-| Problem | Solution |
-|---------|---------|
-| `GEMINI_API_KEY not set` | Make sure `.env` exists and contains your key |
-| Backend not reachable on port 8000 | Check that `uvicorn` is running in the first terminal |
-| `ModuleNotFoundError` | Run `pip install -r requirements.txt` inside the active `.venv` |
-| Empty transcription from voice tab | Ensure audio is loud/clear; try uploading a WAV file instead |
-| ChromaDB version error | Run `pip install --upgrade chromadb langchain-chroma` |
-
----
-
-*مهندس / أحمد حسام عبدالرحمن – فبراير 2026*
