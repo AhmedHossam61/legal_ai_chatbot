@@ -1,0 +1,40 @@
+# ── Web Framework ──────────────────────────────────────────────────────────────
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12          # file uploads in FastAPI
+
+# ── LLM / Embeddings ───────────────────────────────────────────────────────────
+openai==1.58.1
+langchain==0.3.14
+langchain-openai==0.3.1
+langchain-community==0.3.14
+langchain-chroma==0.2.0
+
+# ── Vector Store ───────────────────────────────────────────────────────────────
+chromadb==0.6.3
+
+# ── Document Loaders ───────────────────────────────────────────────────────────
+pymupdf==1.25.1                   # PDF parsing (PyMuPDFLoader)
+docx2txt==0.8                     # DOCX parsing
+
+# ── Config / Validation ────────────────────────────────────────────────────────
+pydantic==2.10.4
+pydantic-settings==2.7.0
+
+# ── Frontend ───────────────────────────────────────────────────────────────────
+streamlit==1.41.1
+httpx==0.28.1                     # API calls from Streamlit to FastAPI
+audio-recorder-streamlit==0.0.10  # in-browser microphone recorder
+
+# ── TTS fallback ───────────────────────────────────────────────────────────────
+gTTS==2.5.3                       # optional – used when TTS_PROVIDER=gtts
+
+# ── Local Whisper (optional) ───────────────────────────────────────────────────
+# Uncomment if you want to run Whisper locally (no API key needed):
+# openai-whisper==20231117
+# torch==2.2.0
+
+# ── Dev / Testing ──────────────────────────────────────────────────────────────
+pytest==8.3.4
+pytest-asyncio==0.25.0
+httpx==0.28.1                     # also used for TestClient in tests

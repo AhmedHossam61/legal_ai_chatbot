@@ -1,1 +1,42 @@
+# Environment & Secrets
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
 .venv/
+venv/
+ENV/
+
+# Vector store (re-generated from documents)
+backend/vector_store/
+
+# Uploaded documents (user data)
+backend/uploads/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
